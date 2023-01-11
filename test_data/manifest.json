@@ -1,10 +1,26 @@
 [
     {
-        "columnName": "",
+        "columnName": {"starts_with": "happy"},
         "rowNum": 0,
         "map": {"string": "outputval"}
     },
     {
-        "columnNums": 
+        "group": {
+            "label": "my group: ",
+            "start": {
+                "row": 0,
+                "col": 0
+            },
+            "end": {
+                "row": 0,
+                "col": 0
+            },
+            "reduce": "sum"
+        }
+    },
+    {
+        "columnName": "",
+        "rowNum": 0,
+        "map": "integer"
     }
 ]

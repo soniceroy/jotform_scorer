@@ -1,0 +1,2 @@
+-r jotform_summary/requirements.txt
+pytest
