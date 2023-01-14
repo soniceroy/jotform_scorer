@@ -9,14 +9,15 @@ from jotform_summary.csv_mapping import Loader
 #     return data
 
 
-def test_cell_mapped_to_string_by_prefix():
-    manifest = [
+def test_cell_mapped_to_string():
+    manifest = {"cargo": [
         {
-            "column_name": {"starts_with": "happy"},
+            "load_type": "scalar",
+            "col_num": 1,
             "row_num": 1,
-            "map": {"map_type": "string", "output": "to you"}
+            "map": {"map_type": "static_string", "output": "to you"}
         }
-    ]
+    ]}
     rows = [
         ["dang", "happy birthday"],
         ["on it", "to you"]
@@ -24,42 +25,97 @@ def test_cell_mapped_to_string_by_prefix():
     loader = Loader(manifest, rows)
     assert(loader.get_string() == "to you")
 
-def test_cell_mapped_to_string_by_string():
-    manifest = [
+def test_cell_mapped_to_string_with_label():
+    manifest = {"cargo": [
         {
-            "column_name": "happy birthday",
+            "load_type": "scalar",
+            "label": "happy birthday ",
+            "col_num": 1,
             "row_num": 1,
-            "map": {"map_type": "string", "output": "to you"}
+            "map": {"map_type": "static_string", "output": "to you"}
         }
-    ]
+    ]}
     rows = [
         ["dang", "happy birthday"],
         ["on it", "to you"]
     ]
     loader = Loader(manifest, rows)
-    assert(loader.get_string() == "to you")
+    assert(loader.get_string() == "happy birthday to you")
 
-def test_group_reduce_by_sum_to_string():
-    manifest = [
+
+def test_cell_mapped_to_string_with_label_and_label_suffix():
+    manifest = {"cargo": [
         {
-            "group": {
-                "label": "my group: ",
-                "row": 0,
-                "start_col": 0,
-                "end_col": 1,
-                "reduce": "sum"
-            }
+            "load_type": "scalar",
+            "label": "happy birthday",
+            "label_suffix": " ",
+            "col_num": 1,
+            "row_num": 1,
+            "map": {"map_type": "static_string", "output": "to you"}
         }
-    ]
-
+    ]}
     rows = [
-        [ 11, 11 ]
+        ["dang", "happy birthday"],
+        ["on it", "to you"]
     ]
-    #loader = Loader(manifest, rows)
-    #assert(loader.get_string() == 42)
+    loader = Loader(manifest, rows)
+    assert(loader.get_string() == "happy birthday to you")
 
-def test_group_reduce_by_multiple_to_string():
-    # stuff
+
+def test_string_from_col_when_map_omitted_and_no_label_with_suffix():
+    manifest = {"cargo": [
+        {
+            "load_type": "scalar",
+            "label_suffix": " to you",
+            "col_num": 1,
+            "row_num": 1,
+        }
+    ]}
     rows = [
-        [6, 7]
+        ["dang", "happy birthday"],
+        ["on it", "nope"]
     ]
+    loader = Loader(manifest, rows)
+    assert(loader.get_string() == "happy birthday to you")
+
+def test_string_from_col_when_map_omitted_label_is_ignored():
+    manifest = {"cargo": [
+        {
+            "load_type": "scalar",
+            "label": "hey, ",
+            "label_suffix": " to you",
+            "col_num": 1,
+            "row_num": 1,
+        }
+    ]}
+    rows = [
+        ["dang", "happy birthday"],
+        ["on it", "nope"]
+    ]
+    loader = Loader(manifest, rows)
+    assert(loader.get_string() == "happy birthday to you")
+
+# def test_group_reduce_by_sum_to_string_with_label():
+#     manifest = {"cargo": [
+#         {
+#             "load_type": "group",
+#             "label": "column_sums to: ",
+#             "row_num": 0,
+#             "start_col": 0,
+#             "end_col": 1,
+#             "reduce": "sum"
+#         }
+#     ]}
+
+#     rows = [
+#         ["column_name", ""],
+#         [ 21, 21 ]
+#     ]
+#     loader = Loader(manifest, rows)
+#     assert(loader.get_string() == "column_sums to: 42")
+
+# def test_group_reduce_by_multiple_to_string():
+#     # stuff
+#     rows = [
+#         [6, 7]
+#     ]
