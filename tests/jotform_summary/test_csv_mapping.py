@@ -95,27 +95,40 @@ def test_string_from_col_when_map_omitted_label_is_ignored():
     loader = Loader(manifest, rows)
     assert(loader.get_string() == "happy birthday to you")
 
-# def test_group_reduce_by_sum_to_string_with_label():
-#     manifest = {"cargo": [
-#         {
-#             "load_type": "group",
-#             "label": "column_sums to: ",
-#             "row_num": 0,
-#             "start_col": 0,
-#             "end_col": 1,
-#             "reduce": "sum"
-#         }
-#     ]}
+def test_group_reduce_by_sum_to_string_with_label():
+    manifest = {"cargo": [
+        {
+            "load_type": "group",
+            "label": "column sums to: ",
+            "row_num": 1,
+            "start_col": 0,
+            "end_col": 1,
+            "reduce": "sum"
+        }
+    ]}
 
-#     rows = [
-#         ["column_name", ""],
-#         [ 21, 21 ]
-#     ]
-#     loader = Loader(manifest, rows)
-#     assert(loader.get_string() == "column_sums to: 42")
+    rows = [
+        ["column_name", ""],
+        [ 21, 21 ]
+    ]
+    loader = Loader(manifest, rows)
+    assert(loader.get_string() == "column sums to: 42.0")
 
-# def test_group_reduce_by_multiple_to_string():
-#     # stuff
-#     rows = [
-#         [6, 7]
-#     ]
+def test_group_reduce_by_multiple_to_string():
+    manifest = {"cargo": [
+        {
+            "load_type": "group",
+            "label": "column multiplies to: ",
+            "row_num": 1,
+            "start_col": 0,
+            "end_col": 1,
+            "reduce": "multiple"
+        }
+    ]}
+
+    rows = [
+        ["column_name", ""],
+        [ 6, 7 ]
+    ]
+    loader = Loader(manifest, rows)
+    assert(loader.get_string() == "column multiplies to: 42.0")

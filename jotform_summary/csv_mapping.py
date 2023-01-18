@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Union, Literal, Optional
 from typing_extensions import Annotated
+from functools import reduce
 
 class Prefixing(BaseModel):
     starts_with: str
@@ -86,8 +87,18 @@ class Loader:
             return self.reduce_group_to_output(loading_description)
     
     def reduce_group_to_output(self, loading_description):
-        header_row = self.rows[0]
-        column_index = self.get_column_index(loading_description, header_row)
+        start = loading_description.start_col
+        end = loading_description.end_col + 1
+        group = self.rows[loading_description.row_num][start:end]
+        reduction = 0.0
+        if loading_description.reduce == 'sum':
+            reduction = reduce(lambda x, y: float(x) + y, group)
+        elif loading_description.reduce == 'multiple':
+            reduction = reduce(lambda x, y: float(x) * y, group)
+        self._output = loading_description.label
+        if loading_description.label_suffix is not None:
+            self._output += loading_description.label_suffix
+        self._output += str(reduction)
 
 
     def map_scalar_row_to_output(self, loading_description):
