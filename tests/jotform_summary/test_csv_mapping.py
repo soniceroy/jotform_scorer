@@ -99,7 +99,7 @@ def test_group_reduce_by_sum_to_string_with_label():
     manifest = {"cargo": [
         {
             "load_type": "group",
-            "label": "column sums to: ",
+            "label": "group sums to: ",
             "row_num": 1,
             "start_col": 0,
             "end_col": 1,
@@ -112,13 +112,13 @@ def test_group_reduce_by_sum_to_string_with_label():
         [ 21, 21 ]
     ]
     loader = Loader(manifest, rows)
-    assert(loader.get_string() == "column sums to: 42.0")
+    assert(loader.get_string() == "group sums to: 42.0")
 
 def test_group_reduce_by_multiple_to_string():
     manifest = {"cargo": [
         {
             "load_type": "group",
-            "label": "column multiplies to: ",
+            "label": "group multiplies to: ",
             "row_num": 1,
             "start_col": 0,
             "end_col": 1,
@@ -131,4 +131,23 @@ def test_group_reduce_by_multiple_to_string():
         [ 6, 7 ]
     ]
     loader = Loader(manifest, rows)
-    assert(loader.get_string() == "column multiplies to: 42.0")
+    assert(loader.get_string() == "group multiplies to: 42.0")
+
+def test_group_reduce_by_average_to_string():
+    manifest = {"cargo": [
+        {
+            "load_type": "group",
+            "label": "group averages to: ",
+            "row_num": 1,
+            "start_col": 0,
+            "end_col": 1,
+            "reduce": "average"
+        }
+    ]}
+
+    rows = [
+        ["column_name", ""],
+        [ 21, 63 ]
+    ]
+    loader = Loader(manifest, rows)
+    assert(loader.get_string() == "group averages to: 42.0")

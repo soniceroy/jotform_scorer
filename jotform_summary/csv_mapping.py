@@ -95,6 +95,8 @@ class Loader:
             reduction = reduce(lambda x, y: float(x) + y, group)
         elif loading_description.reduce == 'multiple':
             reduction = reduce(lambda x, y: float(x) * y, group)
+        elif loading_description.reduce == 'average':
+            reduction = reduce(lambda x, y: float(x) + y, group) / len(group)
         self._output = loading_description.label
         if loading_description.label_suffix is not None:
             self._output += loading_description.label_suffix
