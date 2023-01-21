@@ -14,6 +14,9 @@ class StringMapping(BaseModel):
 class ColumnNumber(BaseModel):
     col_num: int
 
+class BinaryMapping(BaseModel):
+    map_type: Literal["binary"]
+    is_one: str
 
 class ScalarLoadingDescription(BaseModel):
     load_type: Literal["scalar"]
@@ -31,7 +34,10 @@ class ScalarLoadingDescription(BaseModel):
         str
     ]] = None
 
-
+class PreloadDescription(BaseModel):
+    col_num: int
+    row_num: int
+    map: BinaryMapping
 
 class GroupLoadingDescription(BaseModel):
     load_type: Literal["group"]
@@ -49,6 +55,8 @@ class GroupLoadingDescription(BaseModel):
         Literal["multiple"]
     ]
 
+
+
 LoadingDescription = Annotated[
     Union[
         ScalarLoadingDescription, 
@@ -59,6 +67,7 @@ LoadingDescription = Annotated[
 
 class Manifest(BaseModel):
     cargo: list[LoadingDescription]
+    preload: list[PreloadDescription] = []
 
 class LoaderException(Exception):
     pass
@@ -68,16 +77,29 @@ class LoaderException(Exception):
 
 class Loader:
     def __init__(self, manifest: dict, rows: list):
-        self.manifest = Manifest(**manifest).cargo
+        manifest = Manifest(**manifest)
+        self.cargo = manifest.cargo
+        self.preload_descriptions = manifest.preload
         self.rows = rows
         self._output = ""
+        self.preload()
         self.map_rows_to_output()
 
     def get_string(self):
         return self._output
     
+    def preload(self):
+        for description in self.preload_descriptions:
+            if type(description.map) == BinaryMapping:
+                self.map_binary(description)
+    
+    def map_binary(self, description: BinaryMapping):
+        value = self.rows[description.row_num][description.col_num]
+        value = int(value == description.map.is_one)
+        self.rows[description.row_num][description.col_num] = value
+
     def map_rows_to_output(self):
-        for loading_description in self.manifest:
+        for loading_description in self.cargo:
             return self.map_row_to_output(loading_description)
     
     def map_row_to_output(self, loading_description):

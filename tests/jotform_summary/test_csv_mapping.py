@@ -151,3 +151,35 @@ def test_group_reduce_by_average_to_string():
     ]
     loader = Loader(manifest, rows)
     assert(loader.get_string() == "group averages to: 42.0")
+
+def test_text_to_binary_scalar_map_to_one():
+    manifest = {"preload": [
+        {
+            "col_num": 0,
+            "row_num": 1,
+            "map": {"map_type": "binary", "is_one": "true"}
+        }],
+        "cargo": []
+    }
+    rows = [
+        ["dang", "happy birthday"],
+        ["true", "nope"]
+    ]
+    loader = Loader(manifest, rows)
+    assert(loader.rows[1][0] == 1)
+
+def test_text_to_binary_scalar_map_to_zero():
+    manifest = {"preload": [
+        {
+            "col_num": 0,
+            "row_num": 1,
+            "map": {"map_type": "binary", "is_one": "true"}
+        }],
+        "cargo": []
+    }
+    rows = [
+        ["dang", "happy birthday"],
+        ["not tru", "nope"]
+    ]
+    loader = Loader(manifest, rows)
+    assert(loader.rows[1][0] == 0)
