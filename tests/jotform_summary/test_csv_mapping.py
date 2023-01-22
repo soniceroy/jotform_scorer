@@ -1,6 +1,6 @@
 import json
 import pytest
-from jotform_summary.csv_mapping import Loader
+from jotform_summary.csv_mapping import Loader, LoaderException
 
 # @pytest.fixture
 # def manifest():
@@ -168,7 +168,7 @@ def test_text_to_binary_scalar_map_to_one():
     loader = Loader(manifest, rows)
     assert(loader.rows[1][0] == 1)
 
-def test_text_to_binary_scalar_map_to_zero():
+def test_preload_binary():
     manifest = {"preload": [
         {
             "col_num": 0,
@@ -183,3 +183,49 @@ def test_text_to_binary_scalar_map_to_zero():
     ]
     loader = Loader(manifest, rows)
     assert(loader.rows[1][0] == 0)
+
+def test_preload_range():
+    manifest = {"preload": [
+        {
+            "col_num": 0,
+            "row_num": 1,
+            "map": {
+                "map_type": "range", 
+                "range_map": {
+                    "zero": 0,
+                    "one": 1,
+                    "two": 2
+                }
+            }
+        }],
+        "cargo": []
+    }
+    rows = [
+        ["dang", "happy birthday"],
+        ["zero", "nope"]
+    ]
+    loader = Loader(manifest, rows)
+    assert(loader.rows[1][0] == 0)
+
+def test_preload_range_errors_when_out_of_range():
+    manifest = {"preload": [
+        {
+            "col_num": 0,
+            "row_num": 1,
+            "map": {
+                "map_type": "range", 
+                "range_map": {
+                    "zero": 0,
+                    "one": 1,
+                    "two": 2
+                }
+            }
+        }],
+        "cargo": []
+    }
+    rows = [
+        ["dang", "happy birthday"],
+        ["not zero thru two", "nope"]
+    ]
+    with pytest.raises(LoaderException):
+        loader = Loader(manifest, rows)

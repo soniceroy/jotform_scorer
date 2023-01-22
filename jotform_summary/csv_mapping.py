@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Union, Literal, Optional
+from typing import Union, Literal, Optional, Dict
 from typing_extensions import Annotated
 from functools import reduce
 
@@ -17,6 +17,10 @@ class ColumnNumber(BaseModel):
 class BinaryMapping(BaseModel):
     map_type: Literal["binary"]
     is_one: str
+
+class RangeMapping(BaseModel):
+    map_type: Literal["range"]
+    range_map: Dict[str, int]
 
 class ScalarLoadingDescription(BaseModel):
     load_type: Literal["scalar"]
@@ -37,7 +41,7 @@ class ScalarLoadingDescription(BaseModel):
 class PreloadDescription(BaseModel):
     col_num: int
     row_num: int
-    map: BinaryMapping
+    map: Union[BinaryMapping, RangeMapping]
 
 class GroupLoadingDescription(BaseModel):
     load_type: Literal["group"]
@@ -92,11 +96,22 @@ class Loader:
         for description in self.preload_descriptions:
             if type(description.map) == BinaryMapping:
                 self.map_binary(description)
+            if type(description.map) == RangeMapping:
+                self.map_range(description)
     
+    def map_range(self, description: RangeMapping):
+        value = self.rows[description.row_num][description.col_num]
+        range_value = description.map.range_map.get(value, None)
+        if range_value is None:
+            raise LoaderException(
+                f'RangeMappingError: {value} not in range_map {description.map.range_map}'
+            )
+        self.rows[description.row_num][description.col_num] = range_value
+
     def map_binary(self, description: BinaryMapping):
         value = self.rows[description.row_num][description.col_num]
-        value = int(value == description.map.is_one)
-        self.rows[description.row_num][description.col_num] = value
+        binary_value = int(value == description.map.is_one)
+        self.rows[description.row_num][description.col_num] = binary_value
 
     def map_rows_to_output(self):
         for loading_description in self.cargo:
