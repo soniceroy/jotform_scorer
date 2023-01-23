@@ -118,8 +118,9 @@ class Loader:
 
     def map_rows_to_output(self):
         for loading_description in self.cargo:
-            return self.map_row_to_output(loading_description)
-    
+            self.map_row_to_output(loading_description)
+            self._output += '\n'
+
     def map_row_to_output(self, loading_description):
         if type(loading_description) == ScalarLoadingDescription:
             return self.map_scalar_row_to_output(loading_description)

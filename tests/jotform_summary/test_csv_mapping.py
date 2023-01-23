@@ -23,7 +23,7 @@ def test_cell_mapped_to_string():
         ["on it", "to you"]
     ]
     loader = Loader(manifest, rows)
-    assert(loader.get_string() == "to you")
+    assert(loader.get_string() == "to you\n")
 
 def test_cell_mapped_to_string_with_label():
     manifest = {"cargo": [
@@ -40,7 +40,7 @@ def test_cell_mapped_to_string_with_label():
         ["on it", "to you"]
     ]
     loader = Loader(manifest, rows)
-    assert(loader.get_string() == "happy birthday to you")
+    assert(loader.get_string() == "happy birthday to you\n")
 
 
 def test_cell_mapped_to_string_with_label_and_label_suffix():
@@ -59,7 +59,7 @@ def test_cell_mapped_to_string_with_label_and_label_suffix():
         ["on it", "to you"]
     ]
     loader = Loader(manifest, rows)
-    assert(loader.get_string() == "happy birthday to you")
+    assert(loader.get_string() == "happy birthday to you\n")
 
 
 def test_string_from_col_when_map_omitted_and_no_label_with_suffix():
@@ -76,7 +76,7 @@ def test_string_from_col_when_map_omitted_and_no_label_with_suffix():
         ["on it", "nope"]
     ]
     loader = Loader(manifest, rows)
-    assert(loader.get_string() == "happy birthday to you")
+    assert(loader.get_string() == "happy birthday to you\n")
 
 def test_string_from_col_when_map_omitted_label_is_ignored():
     manifest = {"cargo": [
@@ -93,7 +93,7 @@ def test_string_from_col_when_map_omitted_label_is_ignored():
         ["on it", "nope"]
     ]
     loader = Loader(manifest, rows)
-    assert(loader.get_string() == "happy birthday to you")
+    assert(loader.get_string() == "happy birthday to you\n")
 
 def test_group_reduce_by_sum_to_string_with_label():
     manifest = {"cargo": [
@@ -111,7 +111,7 @@ def test_group_reduce_by_sum_to_string_with_label():
         [ 21, 21 ]
     ]
     loader = Loader(manifest, rows)
-    assert(loader.get_string() == "group sums to: 42.0")
+    assert(loader.get_string() == "group sums to: 42.0\n")
 
 def test_group_reduce_by_multiple_to_string():
     manifest = {"cargo": [
@@ -129,7 +129,7 @@ def test_group_reduce_by_multiple_to_string():
         [ 6, 7 ]
     ]
     loader = Loader(manifest, rows)
-    assert(loader.get_string() == "group multiplies to: 42.0")
+    assert(loader.get_string() == "group multiplies to: 42.0\n")
 
 def test_group_reduce_by_average_to_string():
     manifest = {"cargo": [
@@ -147,7 +147,7 @@ def test_group_reduce_by_average_to_string():
         [ 21, 63 ]
     ]
     loader = Loader(manifest, rows)
-    assert(loader.get_string() == "group averages to: 42.0")
+    assert(loader.get_string() == "group averages to: 42.0\n")
 
 def test_non_contiguous_group_by_sum_to_string():
     manifest = {"cargo": [
@@ -165,7 +165,8 @@ def test_non_contiguous_group_by_sum_to_string():
         [ 21, 5, 63 ]
     ]
     loader = Loader(manifest, rows)
-    assert(loader.get_string() == "group averages to: 42.0")
+    assert(loader.get_string() == "group averages to: 42.0\n")
+
 def test_text_to_binary_scalar_map_to_one():
     manifest = {"preload": [
         {
