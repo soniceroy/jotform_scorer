@@ -33,6 +33,7 @@ class ScalarLoadingDescription(BaseModel):
     ] = None
     label_suffix: Optional[str]
     row_num: int
+    ignore_if_empty_string: bool = False
     map: Optional[Union[
         StringMapping,
         str
@@ -126,7 +127,9 @@ class Loader:
 
     def map_rows_to_output(self):
         for loading_description in self.cargo:
-            self.map_row_to_output(loading_description)
+            skip = self.map_row_to_output(loading_description)
+            if skip:
+                continue
             self._output += '\n'
 
     def map_row_to_output(self, loading_description):
@@ -166,7 +169,11 @@ class Loader:
             self.rows[loading_description.row_num][col] for col in loading_description.cols
         ]
 
-    def map_scalar_row_to_output(self, loading_description):
+    def map_scalar_row_to_output(self, loading_description: ScalarLoadingDescription):
+        if loading_description.ignore_if_empty_string:
+            val = self.rows[loading_description.row_num][loading_description.col_num]
+            if val == "":
+                return True
         header_row = self.rows[0]
         if loading_description.map is None:
             self._output = header_row[loading_description.col_num]

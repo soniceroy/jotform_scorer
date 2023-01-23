@@ -95,6 +95,23 @@ def test_string_from_col_when_map_omitted_label_is_ignored():
     loader = Loader(manifest, rows)
     assert(loader.get_string() == "happy birthday to you\n")
 
+def test_ignore_if_empty_string_value_in_scalar():
+    manifest = {"cargo": [
+        {
+            "load_type": "scalar",
+            "label": "Comments: ",
+            "col_num": 1,
+            "row_num": 1,
+            "ignore_if_empty_string": True
+        }
+    ]}
+    rows = [
+        ["dang", "happy birthday"],
+        ["on it", ""]
+    ]
+    loader = Loader(manifest, rows)
+    assert(loader.get_string() == "")
+
 def test_group_reduce_by_sum_to_string_with_label():
     manifest = {"cargo": [
         {
