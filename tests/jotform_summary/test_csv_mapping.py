@@ -149,7 +149,46 @@ def test_group_reduce_by_average_to_string():
     loader = Loader(manifest, rows)
     assert(loader.get_string() == "group averages to: 42.0\n")
 
-def test_non_contiguous_group_by_sum_to_string():
+
+def test_group_reduce_by_sum_then_multiple_to_string():
+    manifest = {"cargo": [
+        {
+            "load_type": "group",
+            "label": "group sums then multiplies to: ",
+            "row_num": 1,
+            "cols": {"start": 0, "end": 1},
+            "reduce": {"sum_then_multiply_by": 20}
+        }
+    ]}
+
+    rows = [
+        ["column_name", ""],
+        [ 11, 10 ]
+    ]
+    loader = Loader(manifest, rows)
+    assert(loader.get_string() == "group sums then multiplies to: 420.0\n")
+
+# TODO: test_group_reduce_by_percentage_to_string (average then times 100)
+
+def test_group_reduce_by_average_then_multiple_to_string():
+    manifest = {"cargo": [
+        {
+            "load_type": "group",
+            "label": "group averages then multiplies to: ",
+            "row_num": 1,
+            "cols": [0,2],
+            "reduce": {"average_then_multiply_by": 10}
+        }
+    ]}
+
+    rows = [
+        ["column_name", "", ""],
+        [ 21, 5, 63 ]
+    ]
+    loader = Loader(manifest, rows)
+    assert(loader.get_string() == "group averages then multiplies to: 420.0\n")
+
+def test_non_contiguous_group_by_average_to_string():
     manifest = {"cargo": [
         {
             "load_type": "group",

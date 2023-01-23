@@ -47,6 +47,12 @@ class ColumnRange(BaseModel):
     start: int
     end: int
 
+class ReduceSumThenMultiplyBy(BaseModel):
+    sum_then_multiply_by: int
+
+class ReduceAverageThenMultiplyBy(BaseModel):
+    average_then_multiply_by: int
+
 class GroupLoadingDescription(BaseModel):
     load_type: Literal["group"]
     label: Union[
@@ -59,7 +65,9 @@ class GroupLoadingDescription(BaseModel):
     reduce: Union[
         Literal["sum"],
         Literal["average"],
-        Literal["multiple"]
+        Literal["multiple"],
+        ReduceSumThenMultiplyBy,
+        ReduceAverageThenMultiplyBy
     ]
 
 
@@ -136,6 +144,12 @@ class Loader:
             reduction = reduce(lambda x, y: float(x) * y, group)
         elif loading_description.reduce == 'average':
             reduction = reduce(lambda x, y: float(x) + y, group) / len(group)
+        elif type(loading_description.reduce) == ReduceSumThenMultiplyBy:
+            reduction = reduce(lambda x, y: float(x) + y, group)
+            reduction *= loading_description.reduce.sum_then_multiply_by
+        elif type(loading_description.reduce) == ReduceAverageThenMultiplyBy:
+            reduction = reduce(lambda x, y: float(x) + y, group) / len(group)
+            reduction *= loading_description.reduce.average_then_multiply_by
         self._output = loading_description.label
         if loading_description.label_suffix is not None:
             self._output += loading_description.label_suffix
