@@ -101,8 +101,7 @@ def test_group_reduce_by_sum_to_string_with_label():
             "load_type": "group",
             "label": "group sums to: ",
             "row_num": 1,
-            "start_col": 0,
-            "end_col": 1,
+            "cols": {"start": 0, "end": 1},
             "reduce": "sum"
         }
     ]}
@@ -120,8 +119,7 @@ def test_group_reduce_by_multiple_to_string():
             "load_type": "group",
             "label": "group multiplies to: ",
             "row_num": 1,
-            "start_col": 0,
-            "end_col": 1,
+            "cols": {"start": 0, "end": 1},
             "reduce": "multiple"
         }
     ]}
@@ -139,8 +137,7 @@ def test_group_reduce_by_average_to_string():
             "load_type": "group",
             "label": "group averages to: ",
             "row_num": 1,
-            "start_col": 0,
-            "end_col": 1,
+            "cols": {"start": 0, "end": 1},
             "reduce": "average"
         }
     ]}
@@ -152,6 +149,23 @@ def test_group_reduce_by_average_to_string():
     loader = Loader(manifest, rows)
     assert(loader.get_string() == "group averages to: 42.0")
 
+def test_non_contiguous_group_by_sum_to_string():
+    manifest = {"cargo": [
+        {
+            "load_type": "group",
+            "label": "group averages to: ",
+            "row_num": 1,
+            "cols": [0,2],
+            "reduce": "average"
+        }
+    ]}
+
+    rows = [
+        ["column_name", "", ""],
+        [ 21, 5, 63 ]
+    ]
+    loader = Loader(manifest, rows)
+    assert(loader.get_string() == "group averages to: 42.0")
 def test_text_to_binary_scalar_map_to_one():
     manifest = {"preload": [
         {

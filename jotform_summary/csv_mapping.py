@@ -43,6 +43,10 @@ class PreloadDescription(BaseModel):
     row_num: int
     map: Union[BinaryMapping, RangeMapping]
 
+class ColumnRange(BaseModel):
+    start: int
+    end: int
+
 class GroupLoadingDescription(BaseModel):
     load_type: Literal["group"]
     label: Union[
@@ -51,8 +55,7 @@ class GroupLoadingDescription(BaseModel):
     ]
     label_suffix: Optional[str]
     row_num: int
-    start_col: int
-    end_col: int
+    cols: Union[list[int], ColumnRange]
     reduce: Union[
         Literal["sum"],
         Literal["average"],
@@ -124,9 +127,7 @@ class Loader:
             return self.reduce_group_to_output(loading_description)
     
     def reduce_group_to_output(self, loading_description):
-        start = loading_description.start_col
-        end = loading_description.end_col + 1
-        group = self.rows[loading_description.row_num][start:end]
+        group = self.get_group(loading_description)
         reduction = 0.0
         if loading_description.reduce == 'sum':
             reduction = reduce(lambda x, y: float(x) + y, group)
@@ -139,6 +140,16 @@ class Loader:
             self._output += loading_description.label_suffix
         self._output += str(reduction)
 
+    def get_group(self, loading_description):
+        if type(loading_description.cols) == ColumnRange:
+            start = loading_description.cols.start
+            end = loading_description.cols.end + 1
+            return self.rows[loading_description.row_num][start:end]
+        
+        # else it is a non-contiguous group
+        return [
+            self.rows[loading_description.row_num][col] for col in loading_description.cols
+        ]
 
     def map_scalar_row_to_output(self, loading_description):
         header_row = self.rows[0]
