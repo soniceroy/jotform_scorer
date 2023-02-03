@@ -239,6 +239,23 @@ def test_text_to_binary_scalar_map_to_one():
     loader = Loader(manifest, rows)
     assert(loader.rows[1][0] == 1)
 
+def test_preload_text_to_binary_scalar_map_to_one_with_col_num_as_ranges():
+    manifest = {"preload": [
+        {
+            "col_num": {"ranges": [[0,1]]},
+            "row_num": 1,
+            "map": {"map_type": "binary", "is_one": "true"}
+        }],
+        "cargo": []
+    }
+    rows = [
+        ["dang", "happy birthday"],
+        ["true", "true"]
+    ]
+    loader = Loader(manifest, rows)
+    assert(all(map(lambda x: x == 1, loader.rows[1])))
+
+
 def test_preload_binary():
     manifest = {"preload": [
         {

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, conlist
 from typing import Union, Literal, Optional, Dict
 from typing_extensions import Annotated
 from functools import reduce
@@ -39,9 +39,12 @@ class ScalarLoadingDescription(BaseModel):
         str
     ]] = None
 
+class PreloadRangesAndOneOffs(BaseModel):
+    ranges: list[Union[int, conlist(int, min_items=2, max_items=2)]]
+
 class PreloadDescription(BaseModel):
-    col_num: int
-    row_num: int
+    col_num: Union[PreloadRangesAndOneOffs, int]
+    row_num: int = 1
     map: Union[BinaryMapping, RangeMapping]
 
 class ColumnRange(BaseModel):
@@ -61,7 +64,7 @@ class GroupLoadingDescription(BaseModel):
         ColumnNumber
     ]
     label_suffix: Optional[str]
-    row_num: int
+    row_num: int = 1
     cols: Union[list[int], ColumnRange]
     reduce: Union[
         Literal["sum"],
@@ -106,11 +109,33 @@ class Loader:
     
     def preload(self):
         for description in self.preload_descriptions:
+            if type(description.col_num) == PreloadRangesAndOneOffs:
+                for col_num in self.get_columns_from_ranges_and_oneoffs(description.col_num.ranges):
+                    new_description = PreloadDescription(
+                        col_num=col_num, 
+                        row_num=description.row_num,
+                        map=description.map
+                    )
+                    self.preload_map_to_value(new_description)
+            else:
+                self.preload_map_to_value(description)
+
+    def preload_map_to_value(self, description):
             if type(description.map) == BinaryMapping:
                 self.map_binary(description)
             if type(description.map) == RangeMapping:
                 self.map_range(description)
-    
+       
+    def get_columns_from_ranges_and_oneoffs(self, ranges_and_oneoffs: PreloadRangesAndOneOffs):
+        for range_or_oneoff in ranges_and_oneoffs:
+            if type(range_or_oneoff) == list:
+                for i in range(range_or_oneoff[0], range_or_oneoff[1] + 1):
+                    print(f'RANGE OR ONE OFF IS INT?: {i}')
+                    yield i
+            else:
+                print(f'RANGE OR ONE OFF IS INT?: {range_or_oneoff}')
+                yield range_or_oneoff
+
     def map_range(self, description: RangeMapping):
         value = self.rows[description.row_num][description.col_num]
         range_value = description.map.range_map.get(value, None)
