@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, conlist
-from typing import Union, Literal, Optional, Dict
+from typing import Union, Literal, Optional, Protocol, Dict
 from typing_extensions import Annotated
 from functools import reduce
 
@@ -130,10 +130,8 @@ class Loader:
         for range_or_oneoff in ranges_and_oneoffs:
             if type(range_or_oneoff) == list:
                 for i in range(range_or_oneoff[0], range_or_oneoff[1] + 1):
-                    print(f'RANGE OR ONE OFF IS INT?: {i}')
                     yield i
             else:
-                print(f'RANGE OR ONE OFF IS INT?: {range_or_oneoff}')
                 yield range_or_oneoff
 
     def map_range(self, description: RangeMapping):
