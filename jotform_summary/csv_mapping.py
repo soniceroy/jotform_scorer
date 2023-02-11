@@ -22,6 +22,10 @@ class RangeMapping(BaseModel):
     map_type: Literal["range"]
     range_map: Dict[str, int]
 
+
+class ScalarLoadingDescriptionException(Exception):
+    pass
+
 class ScalarLoadingDescription(BaseModel):
     load_type: Literal["scalar"]
     col_num: int
@@ -31,13 +35,34 @@ class ScalarLoadingDescription(BaseModel):
             str
         ]
     ] = None
-    label_suffix: Optional[str]
+    label_suffix: str = ""
     row_num: int
     ignore_if_empty_string: bool = False
     map: Optional[Union[
         StringMapping,
         str
     ]] = None
+
+    def output(self, rows):
+        if self.ignore_if_empty_string:
+            val = rows[self.row_num][self.col_num]
+            if val == "":
+                return val
+        header_row = rows[0]
+        out = ""
+        if self.map is None:
+            return header_row[self.col_num] + self.label_suffix + "\n"
+        elif type(self.map) == StringMapping:
+            out += self.map.output
+        else:
+            raise ScalarLoadingDescriptionException("Could not map")
+        
+        if self.label is None:
+            return out + "\n"
+        
+        if self.label_suffix is not None:
+            return self.label + self.label_suffix + out + "\n"
+
 
 class PreloadRangesAndOneOffs(BaseModel):
     ranges: list[Union[int, conlist(int, min_items=2, max_items=2)]]
@@ -63,7 +88,7 @@ class GroupLoadingDescription(BaseModel):
         str,
         ColumnNumber
     ]
-    label_suffix: Optional[str]
+    label_suffix: str = ""
     row_num: int = 1
     cols: Union[list[int], ColumnRange]
     reduce: Union[
@@ -74,7 +99,33 @@ class GroupLoadingDescription(BaseModel):
         ReduceAverageThenMultiplyBy
     ]
 
+    def output(self, rows):
+        group = self.get_group(rows)
+        reduction = 0.0
+        if self.reduce == 'sum':
+            reduction = reduce(lambda x, y: float(x) + y, group)
+        elif self.reduce == 'multiple':
+            reduction = reduce(lambda x, y: float(x) * y, group)
+        elif self.reduce == 'average':
+            reduction = reduce(lambda x, y: float(x) + y, group) / len(group)
+        elif type(self.reduce) == ReduceSumThenMultiplyBy:
+            reduction = reduce(lambda x, y: float(x) + y, group)
+            reduction *= self.reduce.sum_then_multiply_by
+        elif type(self.reduce) == ReduceAverageThenMultiplyBy:
+            reduction = reduce(lambda x, y: float(x) + y, group) / len(group)
+            reduction *= self.reduce.average_then_multiply_by
 
+        return self.label + self.label_suffix + str(reduction) + "\n"
+
+    def get_group(self, rows):
+        if type(self.cols) == ColumnRange:
+            start = self.cols.start
+            end = self.cols.end + 1
+            return rows[self.row_num][start:end]
+        # else it is a non-contiguous group
+        return [
+            rows[self.row_num][col] for col in self.cols
+        ]
 
 LoadingDescription = Annotated[
     Union[
@@ -150,72 +201,8 @@ class Loader:
 
     def map_rows_to_output(self):
         for loading_description in self.cargo:
-            skip = self.map_row_to_output(loading_description)
-            if skip:
-                continue
-            self._output += '\n'
+            self._output += loading_description.output(self.rows)
 
-    def map_row_to_output(self, loading_description):
-        if type(loading_description) == ScalarLoadingDescription:
-            return self.map_scalar_row_to_output(loading_description)
-        elif type(loading_description) == GroupLoadingDescription:
-            return self.reduce_group_to_output(loading_description)
-    
-    def reduce_group_to_output(self, loading_description):
-        group = self.get_group(loading_description)
-        reduction = 0.0
-        if loading_description.reduce == 'sum':
-            reduction = reduce(lambda x, y: float(x) + y, group)
-        elif loading_description.reduce == 'multiple':
-            reduction = reduce(lambda x, y: float(x) * y, group)
-        elif loading_description.reduce == 'average':
-            reduction = reduce(lambda x, y: float(x) + y, group) / len(group)
-        elif type(loading_description.reduce) == ReduceSumThenMultiplyBy:
-            reduction = reduce(lambda x, y: float(x) + y, group)
-            reduction *= loading_description.reduce.sum_then_multiply_by
-        elif type(loading_description.reduce) == ReduceAverageThenMultiplyBy:
-            reduction = reduce(lambda x, y: float(x) + y, group) / len(group)
-            reduction *= loading_description.reduce.average_then_multiply_by
-        self._output = loading_description.label
-        if loading_description.label_suffix is not None:
-            self._output += loading_description.label_suffix
-        self._output += str(reduction)
-
-    def get_group(self, loading_description):
-        if type(loading_description.cols) == ColumnRange:
-            start = loading_description.cols.start
-            end = loading_description.cols.end + 1
-            return self.rows[loading_description.row_num][start:end]
-        
-        # else it is a non-contiguous group
-        return [
-            self.rows[loading_description.row_num][col] for col in loading_description.cols
-        ]
-
-    def map_scalar_row_to_output(self, loading_description: ScalarLoadingDescription):
-        if loading_description.ignore_if_empty_string:
-            val = self.rows[loading_description.row_num][loading_description.col_num]
-            if val == "":
-                return True
-        header_row = self.rows[0]
-        if loading_description.map is None:
-            self._output = header_row[loading_description.col_num]
-            if loading_description.label_suffix is not None:
-                self._output += loading_description.label_suffix
-                return
-        elif type(loading_description.map) == StringMapping:
-            self._output = loading_description.map.output
-        else:
-            raise LoaderException("Could not map")
-        
-        if loading_description.label is None:
-            return
-
-        if loading_description.label_suffix is not None:
-            self._output = loading_description.label + loading_description.label_suffix + self._output
-        else:
-            self._output = loading_description.label + self._output
-    
     def get_column_index(self, loading_description, header_row):
         column_index = -1
         if type(loading_description.column_name) == str:
