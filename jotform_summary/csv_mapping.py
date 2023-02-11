@@ -143,12 +143,14 @@ class LoaderException(Exception):
     pass
 
 
-
+class DataMapperProtocol(Protocol):
+    def output(rows: list) -> str:
+        ...
 
 class Loader:
     def __init__(self, manifest: dict, rows: list):
         manifest = Manifest(**manifest)
-        self.cargo = manifest.cargo
+        self.cargo: list[DataMapperProtocol] = manifest.cargo
         self.preload_descriptions = manifest.preload
         self.rows = rows
         self._output = ""
