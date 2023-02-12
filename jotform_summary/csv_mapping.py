@@ -179,11 +179,15 @@ class DataMapperProtocol(Protocol):
     def output(rows: list) -> str:
         ...
 
+class PreloadProtocol(Protocol):
+    def preload(rows: list) -> None:
+        ...
+
 class Loader:
     def __init__(self, manifest: dict, rows: list):
         manifest = Manifest(**manifest)
         self.cargo: list[DataMapperProtocol] = manifest.cargo
-        self.preload_descriptions = manifest.preload
+        self.preload_descriptions: list[PreloadProtocol] = manifest.preload
         self.rows = rows
         self._output = ""
         self.preload()
