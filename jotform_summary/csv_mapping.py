@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, conlist
-from typing import Union, Literal, Optional, Protocol, Dict
+from typing import Union, Literal, Optional, Protocol, Dict, Iterator
 from typing_extensions import Annotated
 from functools import reduce
 
@@ -93,16 +93,17 @@ class PreloadDescription(BaseModel):
     map: Union[BinaryMapping, RangeMapping]
 
     def preload(self, rows):
-        if type(self.col_num) == int:
-            columns = [self.col_num]
-        else:
-            columns = self.col_num.generate_columns()
-
-        for col_num in columns:
+        for col_num in self.columns:
             key = rows[self.row_num][col_num]
             value = self.map.get(key)
             rows[self.row_num][col_num] = value
-
+    
+    @property
+    def columns(self) -> Union[list[int], Iterator[int]]:
+        if type(self.col_num) == int:
+            return [self.col_num]
+        else:
+            return self.col_num.generate_columns()
 
 class ColumnRange(BaseModel):
     start: int
