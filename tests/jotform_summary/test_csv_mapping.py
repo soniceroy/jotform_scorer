@@ -1,6 +1,6 @@
 import json
 import pytest
-from jotform_summary.csv_mapping import Loader, LoaderException
+from jotform_summary.csv_mapping import Loader, RangeMappingException
 
 # @pytest.fixture
 # def manifest():
@@ -315,5 +315,5 @@ def test_preload_range_errors_when_out_of_range():
         ["dang", "happy birthday"],
         ["not zero thru two", "nope"]
     ]
-    with pytest.raises(LoaderException):
+    with pytest.raises(RangeMappingException):
         loader = Loader(manifest, rows)

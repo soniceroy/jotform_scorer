@@ -18,9 +18,20 @@ class BinaryMapping(BaseModel):
     map_type: Literal["binary"]
     is_one: str
 
+    def get(self, key):
+        return int(key == self.is_one)
+        
+class RangeMappingException(Exception):
+    pass
+
 class RangeMapping(BaseModel):
     map_type: Literal["range"]
     range_map: Dict[str, int]
+
+    def get(self, key):
+        if key not in self.range_map:
+            raise RangeMappingException(f"{key} not in range_map: {self.range_map}")
+        return self.range_map[key]
 
 
 class ScalarLoadingDescriptionException(Exception):
@@ -67,10 +78,31 @@ class ScalarLoadingDescription(BaseModel):
 class PreloadRangesAndOneOffs(BaseModel):
     ranges: list[Union[int, conlist(int, min_items=2, max_items=2)]]
 
+    def generate_columns(self):
+        for range_or_oneoff in self.ranges:
+            if type(range_or_oneoff) == list:
+                for i in range(range_or_oneoff[0], range_or_oneoff[1] + 1):
+                    yield i
+            else:
+                yield range_or_oneoff
+
+
 class PreloadDescription(BaseModel):
     col_num: Union[PreloadRangesAndOneOffs, int]
     row_num: int = 1
     map: Union[BinaryMapping, RangeMapping]
+
+    def preload(self, rows):
+        if type(self.col_num) == int:
+            columns = [self.col_num]
+        else:
+            columns = self.col_num.generate_columns()
+
+        for col_num in columns:
+            key = rows[self.row_num][col_num]
+            value = self.map.get(key)
+            rows[self.row_num][col_num] = value
+
 
 class ColumnRange(BaseModel):
     start: int
@@ -161,57 +193,9 @@ class Loader:
         return self._output
     
     def preload(self):
-        for description in self.preload_descriptions:
-            if type(description.col_num) == PreloadRangesAndOneOffs:
-                for col_num in self.get_columns_from_ranges_and_oneoffs(description.col_num.ranges):
-                    new_description = PreloadDescription(
-                        col_num=col_num, 
-                        row_num=description.row_num,
-                        map=description.map
-                    )
-                    self.preload_map_to_value(new_description)
-            else:
-                self.preload_map_to_value(description)
-
-    def preload_map_to_value(self, description):
-            if type(description.map) == BinaryMapping:
-                self.map_binary(description)
-            if type(description.map) == RangeMapping:
-                self.map_range(description)
-       
-    def get_columns_from_ranges_and_oneoffs(self, ranges_and_oneoffs: PreloadRangesAndOneOffs):
-        for range_or_oneoff in ranges_and_oneoffs:
-            if type(range_or_oneoff) == list:
-                for i in range(range_or_oneoff[0], range_or_oneoff[1] + 1):
-                    yield i
-            else:
-                yield range_or_oneoff
-
-    def map_range(self, description: RangeMapping):
-        value = self.rows[description.row_num][description.col_num]
-        range_value = description.map.range_map.get(value, None)
-        if range_value is None:
-            raise LoaderException(
-                f'RangeMappingError: {value} not in range_map {description.map.range_map}'
-            )
-        self.rows[description.row_num][description.col_num] = range_value
-
-    def map_binary(self, description: BinaryMapping):
-        value = self.rows[description.row_num][description.col_num]
-        binary_value = int(value == description.map.is_one)
-        self.rows[description.row_num][description.col_num] = binary_value
+        for preloader in self.preload_descriptions:
+            preloader.preload(self.rows)
 
     def map_rows_to_output(self):
         for loading_description in self.cargo:
             self._output += loading_description.output(self.rows)
-
-    def get_column_index(self, loading_description, header_row):
-        column_index = -1
-        if type(loading_description.column_name) == str:
-            column_index = header_row.index(loading_description.column_name)
-        if type(loading_description.column_name) == Prefixing:
-            prefix = loading_description.column_name.starts_with      
-            for i, column_name in enumerate(header_row):
-                if column_name.startswith(prefix):
-                    column_index = i
-        return column_index
